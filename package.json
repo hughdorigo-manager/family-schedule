@@ -1,0 +1,15 @@
+{
+  "name": "family-schedule",
+  "version": "1.0.0",
+  "description": "Senior-friendly family schedule display",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
