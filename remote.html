@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Schedule Remote</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --navy-light: #2E4270;
+    --cream: #FAF8F3;
+    --warm-white: #FFFFFF;
+    --border: #E2DDD5;
+    --muted: #718096;
+    --steel: #4A5568;
+    --health: #2D6A4F;
+    --health-bg: #D8F3DC;
+    --family: #7B2D8B;
+    --family-bg: #EDE0F5;
+    --reminder: #B45309;
+    --reminder-bg: #FEF3C7;
+    --routine: #1E5F8C;
+    --routine-bg: #DBEAFE;
+    --danger: #C53030;
+    --danger-bg: #FFF5F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    min-height: 100%;
+    background: var(--cream);
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--navy);
+  }
+
+  .header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-family: 'Lora', serif;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .header-sub {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  .add-btn-wrap { padding: 16px 16px 0; }
+  .add-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--navy);
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.15s;
+  }
+  .add-btn:active { background: var(--navy-light); }
+  .plus-icon {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  /* MODAL OVERLAY */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--warm-white);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 36px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .modal-title {
+    font-family: 'Lora', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--navy);
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--steel);
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 18px;
+    font-family: 'Source Sans 3', sans-serif;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: var(--warm-white);
+    color: var(--navy);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--navy-light); }
+
+  /* CATEGORY PICKER */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .cat-btn {
+    padding: 14px 12px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--warm-white);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    color: var(--steel);
+  }
+  .cat-btn.sel-health   { background: var(--health-bg);   color: var(--health);   border-color: var(--health); }
+  .cat-btn.sel-family   { background: var(--family-bg);   color: var(--family);   border-color: var(--family); }
+  .cat-btn.sel-reminder { background: var(--reminder-bg); color: var(--reminder); border-color: var(--reminder); }
+  .cat-btn.sel-routine  { background: var(--routine-bg);  color: var(--routine);  border-color: var(--routine); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-save {
+    flex: 1;
+    padding: 16px;
+    background: var(--navy);
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-save:active { background: var(--navy-light); }
+  .btn-cancel {
+    padding: 16px 20px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 18px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  /* EVENTS LIST */
+  .section-head {
+    padding: 20px 16px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .events-list { padding: 0 16px 100px; display: flex; flex-direction: column; gap: 10px; }
+  .event-card {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .event-card-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-health   { background: var(--health); }
+  .dot-family   { background: var(--family); }
+  .dot-reminder { background: var(--reminder); }
+  .dot-routine  { background: var(--routine); }
+  .event-card-body { flex: 1; }
+  .event-card-title { font-size: 17px; font-weight: 600; color: var(--navy); }
+  .event-card-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .event-card-note { font-size: 13px; color: var(--steel); margin-top: 3px; font-style: italic; }
+  .event-card-cat {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    padding: 3px 10px;
+    flex-shrink: 0;
+  }
+  .cat-health   { background: var(--health-bg);   color: var(--health); }
+  .cat-family   { background: var(--family-bg);   color: var(--family); }
+  .cat-reminder { background: var(--reminder-bg); color: var(--reminder); }
+  .cat-routine  { background: var(--routine-bg);  color: var(--routine); }
+
+  .edit-btn {
+    background: #EEF2FF;
+    color: var(--navy-light);
+    border: 1.5px solid #C7D7F9;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .del-btn {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1.5px solid #FED7D7;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #276749;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Medical Calendar — Remote</div>
+  <div class="header-sub">Add, edit, or remove appointments</div>
+</div>
+
+<div class="add-btn-wrap">
+  <button class="add-btn" onclick="openModal()">
+    <span class="plus-icon">+</span>
+    Add New Event
+  </button>
+</div>
+
+<div class="section-head">Upcoming Events</div>
+<div class="events-list" id="events-list"></div>
+
+<!-- ADD EVENT MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add New Event</div>
+
+    <div class="form-group">
+      <label class="form-label">What is the event?</label>
+      <input class="form-input" type="text" id="inp-title" placeholder="e.g. Doctor appointment" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" type="date" id="inp-date" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Time (optional)</label>
+      <input class="form-input" type="time" id="inp-time" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <div class="cat-grid">
+        <button class="cat-btn" id="cat-health"   onclick="selectCat('health')">Medical / Health</button>
+        <button class="cat-btn" id="cat-family"   onclick="selectCat('family')">Family / Social</button>
+        <button class="cat-btn" id="cat-reminder" onclick="selectCat('reminder')">Reminder</button>
+        <button class="cat-btn" id="cat-routine"  onclick="selectCat('routine')">Daily Routine</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" type="text" id="inp-note" placeholder="e.g. Bring insurance card" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allEvents = [];
+let selectedCat = 'health';
+let editingId = null;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return (h%12||12) + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+}
+
+async function fetchEvents() {
+  try {
+    const r = await fetch('/api/events');
+    allEvents = await r.json();
+    renderList();
+  } catch(e) {}
+}
+
+function renderList() {
+  const list = document.getElementById('events-list');
+  const sorted = [...allEvents].sort((a,b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return (a.time||'').localeCompare(b.time||'');
+  });
+  if (sorted.length === 0) {
+    list.innerHTML = '<div class="empty-state">No events yet. Tap "Add New Event" to get started.</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(e => `
+    <div class="event-card">
+      <div class="event-card-dot dot-${e.category||'routine'}"></div>
+      <div class="event-card-body">
+        <div class="event-card-title">${e.title}</div>
+        <div class="event-card-meta">${formatDate(e.date)}${e.time ? ' · ' + e.time : ''}</div>
+        ${e.note ? `<div class="event-card-note">${e.note}</div>` : ''}
+      </div>
+      <span class="event-card-cat cat-${e.category||'routine'}">${catLabel(e.category)}</span>
+      <button class="edit-btn" onclick="openModal('${e.id}')">Edit</button>
+      <button class="del-btn" onclick="deleteEvent('${e.id}')">Remove</button>
+    </div>
+  `).join('');
+}
+
+function catLabel(c) {
+  return { health:'Medical', family:'Family', reminder:'Reminder', routine:'Routine' }[c] || 'Event';
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modal-title').textContent = id ? 'Edit Event' : 'Add New Event';
+  if (!id) {
+    document.getElementById('inp-title').value = '';
+    const today = new Date();
+    document.getElementById('inp-date').value = today.toISOString().split('T')[0];
+    document.getElementById('inp-time').value = '';
+    document.getElementById('inp-note').value = '';
+    selectCat('health');
+  } else {
+    const ev = allEvents.find(e => e.id === id);
+    if (ev) {
+      document.getElementById('inp-title').value = ev.title;
+      document.getElementById('inp-date').value = ev.date;
+      // Convert stored "3:30 PM" back to "15:30" for the time input
+      let timeVal = '';
+      if (ev.time) {
+        const match = ev.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (match) {
+          let h = parseInt(match[1]);
+          const m = match[2];
+          const ampm = match[3].toUpperCase();
+          if (ampm === 'PM' && h !== 12) h += 12;
+          if (ampm === 'AM' && h === 12) h = 0;
+          timeVal = String(h).padStart(2,'0') + ':' + m;
+        }
+      }
+      document.getElementById('inp-time').value = timeVal;
+      document.getElementById('inp-note').value = ev.note || '';
+      selectCat(ev.category || 'health');
+    }
+  }
+  document.getElementById('modal-bg').classList.add('open');
+  setTimeout(() => document.getElementById('inp-title').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  editingId = null;
+}
+
+function selectCat(cat) {
+  selectedCat = cat;
+  ['health','family','reminder','routine'].forEach(c => {
+    const btn = document.getElementById('cat-'+c);
+    btn.className = 'cat-btn' + (c === cat ? ' sel-'+c : '');
+  });
+}
+
+async function saveEvent() {
+  const title = document.getElementById('inp-title').value.trim();
+  const date = document.getElementById('inp-date').value;
+  const timeRaw = document.getElementById('inp-time').value;
+  const note = document.getElementById('inp-note').value.trim();
+
+  if (!title) { document.getElementById('inp-title').focus(); return; }
+  if (!date) { document.getElementById('inp-date').focus(); return; }
+
+  let timeFormatted = '';
+  if (timeRaw) {
+    const [h, m] = timeRaw.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    timeFormatted = (h%12||12) + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+  }
+
+  const payload = { title, date, time: timeFormatted, category: selectedCat, note };
+
+  try {
+    if (editingId) {
+      await fetch('/api/events/' + editingId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      showToast('Event updated');
+    } else {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      showToast('Event added to display');
+    }
+    closeModal();
+    fetchEvents();
+  } catch(e) {
+    showToast('Could not save — check connection');
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Remove this event from the schedule?')) return;
+  try {
+    await fetch('/api/events/' + id, { method: 'DELETE' });
+    showToast('Event removed');
+    fetchEvents();
+  } catch(e) {}
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+fetchEvents();
+</script>
+</body>
+</html>
