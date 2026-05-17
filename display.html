@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Medical Calendar">
+<title>Medical Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF8F3;
+    --warm-white: #FFFFFF;
+    --navy: #1B2A4A;
+    --navy-light: #2E4270;
+    --steel: #4A5568;
+    --muted: #718096;
+    --border: #E2DDD5;
+    --health: #2D6A4F;
+    --health-bg: #D8F3DC;
+    --family: #7B2D8B;
+    --family-bg: #EDE0F5;
+    --reminder: #B45309;
+    --reminder-bg: #FEF3C7;
+    --routine: #1E5F8C;
+    --routine-bg: #DBEAFE;
+    --today-border: #2E4270;
+    --today-bg: #EEF2FF;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    height: -webkit-fill-available;
+    background: var(--cream);
+    font-family: 'Source Sans 3', sans-serif;
+    color: var(--navy);
+    overflow: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: -webkit-fill-available;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* CLOCK BAR */
+  .clock-bar {
+    background: var(--navy);
+    color: white;
+    padding: 6px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .clock-time {
+    font-family: 'Lora', serif;
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: #FF4444;
+    white-space: nowrap;
+  }
+  .clock-title {
+    font-family: 'Lora', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.01em;
+    text-align: center;
+    flex: 1;
+    padding: 0 20px;
+  }
+  .wifi-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    opacity: 0.5;
+    margin-top: 2px;
+  }
+  .wifi-dot { width: 6px; height: 6px; border-radius: 50%; background: #68D391; animation: blink 3s infinite; }
+  .wifi-dot.offline { background: #FC8181; animation: none; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .clock-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .clock-date {
+    font-size: 15px;
+    font-weight: 400;
+    opacity: 0.85;
+    text-align: right;
+    line-height: 1.3;
+  }
+  .clock-date .day-name { font-size: 18px; font-weight: 600; display: block; }
+
+  /* VIEW BAR */
+  .view-bar {
+    background: var(--warm-white);
+    border-bottom: 1.5px solid var(--border);
+    padding: 7px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .view-label { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .view-btn {
+    padding: 8px 22px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border-radius: 50px;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--steel);
+    cursor: pointer;
+    transition: all 0.18s;
+    min-width: 100px;
+  }
+  .view-btn:hover { border-color: var(--navy-light); color: var(--navy-light); background: #F0F4FF; }
+  .view-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  /* NAV STRIP */
+  .nav-strip {
+    background: var(--cream);
+    border-bottom: 1.5px solid var(--border);
+    padding: 6px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    padding: 10px 26px;
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border-radius: 50px;
+    border: 2px solid var(--border);
+    background: var(--warm-white);
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+    min-width: 64px;
+    text-align: center;
+  }
+  .nav-btn:hover { background: #F0F4FF; border-color: var(--navy-light); }
+  .nav-btn:active { background: #E0E8FF; }
+  .nav-label {
+    font-family: 'Lora', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--navy);
+    min-width: 260px;
+    text-align: center;
+  }
+  .nav-today-btn {
+    padding: 8px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border-radius: 50px;
+    border: 2px solid var(--navy);
+    background: transparent;
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-today-btn:hover { background: var(--navy); color: white; }
+  .nav-today-btn.hidden { display: none; }
+
+  /* CAL AREA */
+  .cal-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* DAY HEADERS */
+  .dow-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .dow-hdr {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 0;
+  }
+
+  /* WEEK VIEW */
+  .week-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+    flex: 1;
+  }
+  .week-cell {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .week-cell.is-today { border: 2.5px solid var(--today-border); background: var(--today-bg); }
+  .week-cell-head {
+    padding: 6px 8px 4px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.02);
+    flex-shrink: 0;
+  }
+  .week-cell.is-today .week-cell-head { background: var(--navy); }
+  .week-cell-dow { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .week-cell.is-today .week-cell-dow { color: rgba(255,255,255,0.7); }
+  .week-cell-date { font-family: 'Lora', serif; font-size: 32px; font-weight: 600; color: var(--navy); line-height: 1.1; }
+  .week-cell.is-today .week-cell-date { color: white; }
+  .week-cell-events { padding: 5px 6px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+  /* EVENT PILLS - WEEK */
+  .ev-pill {
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .ev-pill .ev-time {
+    font-size: 18px;
+    font-weight: 700;
+    color: #CC0000;
+    display: block;
+    margin-bottom: 1px;
+  }
+  .ev-pill.health   { background: var(--health-bg);   color: var(--health); }
+  .ev-pill.family   { background: var(--family-bg);   color: var(--family); }
+  .ev-pill.reminder { background: var(--reminder-bg); color: var(--reminder); }
+  .ev-pill.routine  { background: var(--routine-bg);  color: var(--routine); }
+
+  /* MONTH VIEW */
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    flex: 1;
+  }
+  .month-cell {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    min-height: 70px;
+    padding: 5px 6px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+    position: relative;
+  }
+  .month-cell:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+  .month-cell.other-month { opacity: 0.3; }
+  .month-cell.is-today { border: 2.5px solid var(--today-border); background: var(--today-bg); }
+  .month-cell-date { font-size: 16px; font-weight: 600; color: var(--navy); font-family: 'Lora', serif; margin-bottom: 2px; }
+  .month-cell.is-today .month-cell-date { color: var(--navy-light); }
+  .month-ev {
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .month-ev .month-ev-time { font-size: 11px; font-weight: 700; color: #CC0000; display: block; }
+  .month-ev.health   { background: var(--health-bg);   color: var(--health); }
+  .month-ev.family   { background: var(--family-bg);   color: var(--family); }
+  .month-ev.reminder { background: var(--reminder-bg); color: var(--reminder); }
+  .month-ev.routine  { background: var(--routine-bg);  color: var(--routine); }
+
+  /* DAY EXPAND OVERLAY */
+  .day-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .day-overlay.open { display: flex; }
+  .day-popup {
+    background: var(--warm-white);
+    border-radius: 20px;
+    padding: 24px;
+    width: 480px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .day-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .day-popup-title { font-family: 'Lora', serif; font-size: 28px; font-weight: 600; color: var(--navy); }
+  .day-popup-close {
+    background: var(--cream);
+    border: none;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--steel);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .day-popup-event {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .day-popup-event .popup-time { font-size: 18px; font-weight: 700; color: #CC0000; display: block; margin-bottom: 3px; }
+  .day-popup-event .popup-note { font-size: 15px; font-weight: 400; opacity: 0.75; margin-top: 4px; display: block; }
+  .day-popup-event.health   { background: var(--health-bg);   color: var(--health); }
+  .day-popup-event.family   { background: var(--family-bg);   color: var(--family); }
+  .day-popup-event.reminder { background: var(--reminder-bg); color: var(--reminder); }
+  .day-popup-event.routine  { background: var(--routine-bg);  color: var(--routine); }
+  .day-popup-empty { color: var(--muted); font-size: 17px; text-align: center; padding: 20px 0; }
+
+  /* TODAY STRIP REMOVED */
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="clock-bar">
+    <div style="display:flex;flex-direction:column;">
+      <div class="clock-time" id="clock-time">12:00 PM</div>
+      <div class="wifi-status">
+        <div class="wifi-dot" id="wifi-dot"></div>
+        <span id="wifi-label">Connected</span>
+      </div>
+    </div>
+    <div class="clock-title">Medical Calendar</div>
+    <div class="clock-right">
+      <div class="clock-date">
+        <span class="day-name" id="clock-dayname">Monday</span>
+        <span id="clock-datestr">May 4, 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="view-bar">
+    <span class="view-label">Show:</span>
+    <button class="view-btn active" id="btn-week" onclick="setView('week')">1 Week</button>
+    <button class="view-btn" id="btn-twoweek" onclick="setView('twoweek')">2 Weeks</button>
+    <button class="view-btn" id="btn-month" onclick="setView('month')">Month</button>
+  </div>
+
+  <div class="nav-strip">
+    <button class="nav-btn" onclick="navigate(-1)">&#8592;</button>
+    <div class="nav-label" id="nav-label"></div>
+    <button class="nav-btn" onclick="navigate(1)">&#8594;</button>
+    <button class="nav-today-btn hidden" id="nav-today" onclick="goToday()">Back to Today</button>
+  </div>
+
+  <div class="cal-area" id="cal-area"></div>
+
+</div>
+
+<!-- DAY EXPAND OVERLAY -->
+<div class="day-overlay" id="day-overlay" onclick="closeDay(event)">
+  <div class="day-popup" id="day-popup">
+    <div class="day-popup-header">
+      <div class="day-popup-title" id="day-popup-title"></div>
+      <button class="day-popup-close" onclick="closeDayPopup()">✕</button>
+    </div>
+    <div id="day-popup-body"></div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS_S = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let allEvents = [];
+let currentView = 'week';
+let navOffset = 0;
+
+function sameDay(a, b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function eventsFor(d) {
+  return allEvents.filter(e => {
+    const ed = new Date(e.date + 'T00:00:00');
+    return sameDay(ed, d);
+  }).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+}
+
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clock-time').textContent = h + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+  document.getElementById('clock-dayname').textContent = DAYS[now.getDay()];
+  document.getElementById('clock-datestr').textContent = MONTHS[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+}
+
+async function fetchEvents() {
+  try {
+    const r = await fetch('/api/events');
+    allEvents = await r.json();
+    document.getElementById('wifi-dot').className = 'wifi-dot';
+    document.getElementById('wifi-label').textContent = 'Connected';
+    render();
+  } catch(e) {
+    document.getElementById('wifi-dot').className = 'wifi-dot offline';
+    document.getElementById('wifi-label').textContent = 'Offline — showing saved schedule';
+  }
+}
+
+function navigate(dir) { navOffset += dir; render(); }
+function goToday() { navOffset = 0; render(); }
+
+function updateNavLabel() {
+  document.getElementById('nav-today').classList.toggle('hidden', navOffset === 0);
+  if (currentView === 'month') {
+    const d = new Date(new Date().getFullYear(), new Date().getMonth() + navOffset, 1);
+    document.getElementById('nav-label').textContent = MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  } else {
+    const today = new Date();
+    const weeksToAdd = currentView === 'twoweek' ? navOffset * 2 : navOffset;
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay() + weeksToAdd * 7);
+    const numWeeks = currentView === 'twoweek' ? 2 : 1;
+    const end = new Date(start);
+    end.setDate(start.getDate() + numWeeks * 7 - 1);
+    const startStr = MONTHS_S[start.getMonth()] + ' ' + start.getDate();
+    const endStr = (start.getMonth() !== end.getMonth() ? MONTHS_S[end.getMonth()] + ' ' : '') + end.getDate() + ', ' + end.getFullYear();
+    document.getElementById('nav-label').textContent = startStr + ' – ' + endStr;
+  }
+}
+
+function openDay(dateStr, dateLabel) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const evs = eventsFor(d);
+  document.getElementById('day-popup-title').textContent = dateLabel;
+  const body = document.getElementById('day-popup-body');
+  if (evs.length === 0) {
+    body.innerHTML = '<div class="day-popup-empty">No appointments this day</div>';
+  } else {
+    body.innerHTML = evs.map(e => `
+      <div class="day-popup-event ${e.category||'routine'}">
+        ${e.time ? `<span class="popup-time">${e.time}</span>` : ''}
+        ${e.title}
+        ${e.note ? `<span class="popup-note">${e.note}</span>` : ''}
+      </div>
+    `).join('');
+  }
+  document.getElementById('day-overlay').classList.add('open');
+}
+
+function closeDay(e) {
+  if (e.target === document.getElementById('day-overlay')) closeDayPopup();
+}
+function closeDayPopup() {
+  document.getElementById('day-overlay').classList.remove('open');
+}
+
+function evPillHtml(e, size) {
+  if (size === 'month') {
+    return `<div class="month-ev ${e.category||'routine'}">${e.time ? `<span class="month-ev-time">${e.time}</span>` : ''}${e.title}</div>`;
+  }
+  return `<div class="ev-pill ${e.category||'routine'}"><span class="ev-time">${e.time||''}</span>${e.title}</div>`;
+}
+
+function renderWeek(numWeeks) {
+  const today = new Date();
+  const weeksToAdd = numWeeks === 2 ? navOffset * 2 : navOffset;
+  const start = new Date(today);
+  start.setDate(today.getDate() - today.getDay() + weeksToAdd * 7);
+
+  let html = '<div style="display:flex;flex-direction:column;flex:1;gap:4px;">';
+  html += '<div class="dow-row">' + DAYS_S.map(d=>`<div class="dow-hdr">${d}</div>`).join('') + '</div>';
+  for (let w = 0; w < numWeeks; w++) {
+    html += '<div class="week-row">';
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(start);
+      cur.setDate(start.getDate() + w*7 + d);
+      const isToday = sameDay(cur, today);
+      const evs = eventsFor(cur);
+      html += `<div class="week-cell${isToday?' is-today':''}">
+        <div class="week-cell-head">
+          <div class="week-cell-dow">${DAYS_S[cur.getDay()]}</div>
+          <div class="week-cell-date">${cur.getDate()}</div>
+        </div>
+        <div class="week-cell-events">${evs.map(e=>evPillHtml(e,'week')).join('')}</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderMonth() {
+  const today = new Date();
+  const year = new Date(today.getFullYear(), today.getMonth() + navOffset, 1).getFullYear();
+  const month = new Date(today.getFullYear(), today.getMonth() + navOffset, 1).getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+
+  let html = '<div class="dow-row">' + DAYS_S.map(d=>`<div class="dow-hdr">${d}</div>`).join('') + '</div>';
+  html += '<div class="month-grid">';
+
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  let dayCount = 1, nextCount = 1;
+  for (let i = 0; i < totalCells; i++) {
+    let cellDate, other = false;
+    if (i < firstDay) { cellDate = new Date(year, month-1, daysInPrev-firstDay+1+i); other=true; }
+    else if (dayCount > daysInMonth) { cellDate = new Date(year, month+1, nextCount++); other=true; }
+    else { cellDate = new Date(year, month, dayCount++); }
+    const isToday = sameDay(cellDate, today);
+    const evs = eventsFor(cellDate);
+    const dateStr = cellDate.getFullYear()+'-'+String(cellDate.getMonth()+1).padStart(2,'0')+'-'+String(cellDate.getDate()).padStart(2,'0');
+    const dateLabel = DAYS[cellDate.getDay()] + ', ' + MONTHS[cellDate.getMonth()] + ' ' + cellDate.getDate();
+    html += `<div class="month-cell${other?' other-month':''}${isToday?' is-today':''}" onclick="openDay('${dateStr}','${dateLabel}')">
+      <div class="month-cell-date">${cellDate.getDate()}</div>
+      ${evs.slice(0,3).map(e=>evPillHtml(e,'month')).join('')}
+      ${evs.length>3?`<div style="font-size:11px;color:var(--muted);font-weight:600;">+${evs.length-3} more — tap to see all</div>`:''}
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function render() {
+  updateNavLabel();
+  const area = document.getElementById('cal-area');
+  if (currentView === 'week') area.innerHTML = renderWeek(1);
+  else if (currentView === 'twoweek') area.innerHTML = renderWeek(2);
+  else area.innerHTML = renderMonth();
+}
+
+function setView(v) {
+  currentView = v;
+  navOffset = 0;
+  ['week','twoweek','month'].forEach(name => {
+    document.getElementById('btn-'+name).classList.toggle('active', name===v);
+  });
+  render();
+}
+
+updateClock();
+setInterval(updateClock, 10000);
+fetchEvents();
+setInterval(fetchEvents, 30000);
+</script>
+</body>
+</html>
