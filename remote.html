@@ -225,6 +225,25 @@
   .cat-reminder { background: var(--reminder-bg); color: var(--reminder); }
   .cat-routine  { background: var(--routine-bg);  color: var(--routine); }
 
+  .view-ctrl-btn {
+    padding: 12px 8px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Source Sans 3', sans-serif;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--warm-white);
+    color: var(--steel);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .view-ctrl-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
   .edit-btn {
     background: #EEF2FF;
     color: var(--navy-light);
@@ -289,6 +308,16 @@
     <span class="plus-icon">+</span>
     Add New Event
   </button>
+</div>
+
+<div style="padding: 12px 16px 0;">
+  <div style="font-size:13px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Display View</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+    <button class="view-ctrl-btn active" id="vbtn-week" onclick="setDisplayView('week')">1 Week</button>
+    <button class="view-ctrl-btn" id="vbtn-twoweek" onclick="setDisplayView('twoweek')">2 Weeks</button>
+    <button class="view-ctrl-btn" id="vbtn-fourweek" onclick="setDisplayView('fourweek')">4 Weeks</button>
+    <button class="view-ctrl-btn" id="vbtn-month" onclick="setDisplayView('month')">Month</button>
+  </div>
 </div>
 
 <div class="section-head">Upcoming Events</div>
@@ -502,11 +531,38 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-document.getElementById('modal-bg').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+async function setDisplayView(v) {
+  try {
+    await fetch('/api/view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ view: v })
+    });
+    ['week','twoweek','fourweek','month'].forEach(name => {
+      const btn = document.getElementById('vbtn-'+name);
+      if (btn) btn.classList.toggle('active', name===v);
+    });
+    showToast('Display switched to ' + v.replace('twoweek','2 Weeks').replace('fourweek','4 Weeks').replace('week','1 Week').replace('month','Month'));
+  } catch(e) {
+    showToast('Could not update display view');
+  }
+}
+
+async function syncCurrentView() {
+  try {
+    const r = await fetch('/api/view');
+    const data = await r.json();
+    if (data.view) {
+      ['week','twoweek','fourweek','month'].forEach(name => {
+        const btn = document.getElementById('vbtn-'+name);
+        if (btn) btn.classList.toggle('active', name===data.view);
+      });
+    }
+  } catch(e) {}
+}
 
 fetchEvents();
+syncCurrentView();
 </script>
 </body>
 </html>

@@ -26,6 +26,8 @@ async function initDB() {
   console.log('Database ready');
 }
 
+let currentView = 'week'; // shared view state
+
 function serveFile(res, filePath, contentType) {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
@@ -64,6 +66,20 @@ const server = http.createServer(async (req, res) => {
       serveFile(res, path.join(__dirname, 'display.html'), 'text/html');
     } else if (pathname === '/remote') {
       serveFile(res, path.join(__dirname, 'remote.html'), 'text/html');
+    } else if (pathname === '/api/view' && req.method === 'GET') {
+      jsonResponse(res, { view: currentView });
+    } else if (pathname === '/api/view' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const data = JSON.parse(body);
+          if (data.view) currentView = data.view;
+          jsonResponse(res, { ok: true });
+        } catch(e) {
+          jsonResponse(res, { error: 'bad request' }, 400);
+        }
+      });
     } else if (pathname === '/api/events' && req.method === 'GET') {
       const result = await pool.query('SELECT * FROM events ORDER BY date ASC, time ASC');
       jsonResponse(res, result.rows);

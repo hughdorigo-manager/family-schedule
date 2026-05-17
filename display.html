@@ -66,7 +66,7 @@
   }
   .clock-title {
     font-family: 'Lora', serif;
-    font-size: 26px;
+    font-size: 34px;
     font-weight: 600;
     color: white;
     letter-spacing: 0.01em;
@@ -126,56 +126,7 @@
   .view-btn:hover { border-color: var(--navy-light); color: var(--navy-light); background: #F0F4FF; }
   .view-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
 
-  /* NAV STRIP */
-  .nav-strip {
-    background: var(--cream);
-    border-bottom: 1.5px solid var(--border);
-    padding: 6px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    flex-shrink: 0;
-  }
-  .nav-btn {
-    padding: 10px 26px;
-    font-size: 22px;
-    font-weight: 600;
-    font-family: 'Source Sans 3', sans-serif;
-    border-radius: 50px;
-    border: 2px solid var(--border);
-    background: var(--warm-white);
-    color: var(--navy);
-    cursor: pointer;
-    transition: all 0.15s;
-    line-height: 1;
-    min-width: 64px;
-    text-align: center;
-  }
-  .nav-btn:hover { background: #F0F4FF; border-color: var(--navy-light); }
-  .nav-btn:active { background: #E0E8FF; }
-  .nav-label {
-    font-family: 'Lora', serif;
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--navy);
-    min-width: 260px;
-    text-align: center;
-  }
-  .nav-today-btn {
-    padding: 8px 20px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: 'Source Sans 3', sans-serif;
-    border-radius: 50px;
-    border: 2px solid var(--navy);
-    background: transparent;
-    color: var(--navy);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .nav-today-btn:hover { background: var(--navy); color: white; }
-  .nav-today-btn.hidden { display: none; }
+  /* NAV STRIP REMOVED */
 
   /* CAL AREA */
   .cal-area {
@@ -239,16 +190,23 @@
   .ev-pill {
     border-radius: 6px;
     padding: 7px 10px;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
     line-height: 1.3;
   }
   .ev-pill .ev-time {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: #CC0000;
     display: block;
     margin-bottom: 1px;
+  }
+  .ev-pill .ev-note {
+    font-size: 15px;
+    font-weight: 400;
+    opacity: 0.75;
+    display: block;
+    margin-top: 2px;
   }
   .ev-pill.health   { background: var(--health-bg);   color: var(--health); }
   .ev-pill.family   { background: var(--family-bg);   color: var(--family); }
@@ -288,6 +246,7 @@
     text-overflow: ellipsis;
   }
   .month-ev .month-ev-time { font-size: 11px; font-weight: 700; color: #CC0000; display: block; }
+  .month-ev .month-ev-note { font-size: 10px; font-weight: 400; opacity: 0.75; }
   .month-ev.health   { background: var(--health-bg);   color: var(--health); }
   .month-ev.family   { background: var(--family-bg);   color: var(--family); }
   .month-ev.reminder { background: var(--reminder-bg); color: var(--reminder); }
@@ -373,14 +332,8 @@
     <span class="view-label">Show:</span>
     <button class="view-btn active" id="btn-week" onclick="setView('week')">1 Week</button>
     <button class="view-btn" id="btn-twoweek" onclick="setView('twoweek')">2 Weeks</button>
+    <button class="view-btn" id="btn-fourweek" onclick="setView('fourweek')">4 Weeks</button>
     <button class="view-btn" id="btn-month" onclick="setView('month')">Month</button>
-  </div>
-
-  <div class="nav-strip">
-    <button class="nav-btn" onclick="navigate(-1)">&#8592;</button>
-    <div class="nav-label" id="nav-label"></div>
-    <button class="nav-btn" onclick="navigate(1)">&#8594;</button>
-    <button class="nav-today-btn hidden" id="nav-today" onclick="goToday()">Back to Today</button>
   </div>
 
   <div class="cal-area" id="cal-area"></div>
@@ -491,16 +444,15 @@ function closeDayPopup() {
 
 function evPillHtml(e, size) {
   if (size === 'month') {
-    return `<div class="month-ev ${e.category||'routine'}">${e.time ? `<span class="month-ev-time">${e.time}</span>` : ''}${e.title}</div>`;
+    return `<div class="month-ev ${e.category||'routine'}">${e.time ? `<span class="month-ev-time">${e.time}</span>` : ''}${e.title}${e.note ? `<span class="month-ev-note"> — ${e.note}</span>` : ''}</div>`;
   }
-  return `<div class="ev-pill ${e.category||'routine'}"><span class="ev-time">${e.time||''}</span>${e.title}</div>`;
+  return `<div class="ev-pill ${e.category||'routine'}"><span class="ev-time">${e.time||''}</span>${e.title}${e.note ? `<span class="ev-note">${e.note}</span>` : ''}</div>`;
 }
 
 function renderWeek(numWeeks) {
   const today = new Date();
-  const weeksToAdd = numWeeks === 2 ? navOffset * 2 : navOffset;
   const start = new Date(today);
-  start.setDate(today.getDate() - today.getDay() + weeksToAdd * 7);
+  start.setDate(today.getDate() - today.getDay());
 
   let html = '<div style="display:flex;flex-direction:column;flex:1;gap:4px;">';
   html += '<div class="dow-row">' + DAYS_S.map(d=>`<div class="dow-hdr">${d}</div>`).join('') + '</div>';
@@ -558,26 +510,46 @@ function renderMonth() {
 }
 
 function render() {
-  updateNavLabel();
   const area = document.getElementById('cal-area');
   if (currentView === 'week') area.innerHTML = renderWeek(1);
   else if (currentView === 'twoweek') area.innerHTML = renderWeek(2);
+  else if (currentView === 'fourweek') area.innerHTML = renderWeek(4);
   else area.innerHTML = renderMonth();
 }
 
 function setView(v) {
   currentView = v;
-  navOffset = 0;
-  ['week','twoweek','month'].forEach(name => {
+  ['week','twoweek','fourweek','month'].forEach(name => {
     document.getElementById('btn-'+name).classList.toggle('active', name===v);
   });
+  // Save view preference to server so remote can control it
+  fetch('/api/view', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ view: v })
+  }).catch(() => {});
   render();
+}
+
+async function syncView() {
+  try {
+    const r = await fetch('/api/view');
+    const data = await r.json();
+    if (data.view && data.view !== currentView) {
+      currentView = data.view;
+      ['week','twoweek','fourweek','month'].forEach(name => {
+        document.getElementById('btn-'+name).classList.toggle('active', name===currentView);
+      });
+      render();
+    }
+  } catch(e) {}
 }
 
 updateClock();
 setInterval(updateClock, 10000);
 fetchEvents();
 setInterval(fetchEvents, 30000);
+setInterval(syncView, 5000);
 </script>
 </body>
 </html>
